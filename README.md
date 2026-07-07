@@ -48,3 +48,6 @@ Healing Logs:
 { missing: 'username', mappedTo: 'userName' }
 
 Test Passed
+
+#Screenshot of e2e test run
+screenshots/successfulTestRun.png
