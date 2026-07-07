@@ -1,12 +1,17 @@
 
 import { getDriver } from "../../core/driver/driverFactory";
 import { LoginPage } from "../../pages/login.page";
+
 import { createPayment } from "../../services/payment.service";
 import { healResponse } from "../../core/apiHealing/apiHealer";
 
+import { evaluateResponse } from "../../core/evaluation/evaluationEngine";
+import { detectRisks } from "../../core/evaluation/riskDetector";
+import { calculateScore, getQualityLabel } from "../../core/evaluation/scoringEngine";
+
 import { until } from "selenium-webdriver";
 
-describe("End-to-End Test: UI + API Payment Flow", function () {
+describe("End-to-End Test: UI + API + Self-Healing + Evaluation + Scoring", function () {
 
     this.timeout(60000);
 
@@ -24,9 +29,12 @@ describe("End-to-End Test: UI + API Payment Flow", function () {
         }
     });
 
-    it("should login via UI and process payment via API", async function () {
+    it("should execute end-to-end login and evaluate payment with scoring", async function () {
 
-        // STEP 1: UI Login
+        // ============================
+        // STEP 1: UI LOGIN
+        // ============================
+
         await loginPage.open();
         await loginPage.login("tomsmith", "SuperSecretPassword!");
 
@@ -40,29 +48,77 @@ describe("End-to-End Test: UI + API Payment Flow", function () {
 
         console.log("Login successful");
 
-        // STEP 2: Create Payment (API)
+        // ============================
+        // STEP 2: API PAYMENT
+        // ============================
+
         const payment = await createPayment();
 
         console.log("Raw Payment:", payment);
 
-        // STEP 3: Expected schema (intentionally mismatched)
+        // ============================
+        // STEP 3: SELF-HEALING
+        // ============================
+
         const expectedSchema = {
             amount: "",
             currency: "",
-            username: ""   // different from userName
+            username: ""
         };
 
-        // STEP 4: Self-healing API validation
         const healed = healResponse(payment, expectedSchema);
 
-        console.log("Healed Payment:", healed);
+        console.log("Healed Response:", healed);
 
-        if (!healed.username) {
-            throw new Error("Self-healing failed for username");
+        // ============================
+        // STEP 4: EVALUATION
+        // ============================
+
+        const evaluation = evaluateResponse(healed);
+
+        if (!evaluation.passed) {
+            console.log("Evaluation Issues:", evaluation.issues);
+            throw new Error("Evaluation failed");
         }
 
-        console.log("Payment validation successful");
+        console.log("Evaluation passed");
 
+        // ============================
+        // STEP 5: RISK DETECTION
+        // ============================
+
+        const risks = detectRisks(healed);
+
+        if (risks.length > 0) {
+            console.log("Detected Risks:", risks);
+        }
+
+        // ============================
+        // STEP 6: SCORING (DEEPEVAL-STYLE)
+        // ============================
+
+        const scoring = calculateScore(healed);
+
+        console.log("Score:", scoring.score);
+        console.log("Score Breakdown:", scoring.breakdown);
+
+        // ============================
+        // STEP 7: QUALITY CLASSIFICATION
+        // ============================
+
+        const quality = getQualityLabel(scoring.score);
+
+        console.log("Quality Level:", quality);
+
+        // ============================
+        // STEP 8: FINAL DECISION
+        // ============================
+
+        if (scoring.score < 0.6) {
+            throw new Error(`Low quality response. Score: ${scoring.score}`);
+        }
+
+        console.log("End-to-end test completed successfully");
     });
 
 });

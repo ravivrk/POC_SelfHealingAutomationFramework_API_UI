@@ -22,7 +22,7 @@ export function healResponse(response: any, expectedSchema: any) {
         }
     }
 
-    console.log("🔧 Healing logs:", logs);
+    console.log(" Healing logs:", logs);
 
     return healed;
 }

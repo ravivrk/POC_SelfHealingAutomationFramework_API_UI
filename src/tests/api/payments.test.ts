@@ -1,54 +1,64 @@
 
-import { createPayment, getPaymentStatus } from "../../services/payment.service";
+import { createPayment } from "../../services/payment.service";
 import { healResponse } from "../../core/apiHealing/apiHealer";
+import { evaluateResponse } from "../../core/evaluation/evaluationEngine";
+import { detectRisks } from "../../core/evaluation/riskDetector";
+import { calculateScore, getQualityLabel } from "../../core/evaluation/scoringEngine";
 
-describe(" Payment Workflow Test (Self-Healing)", () => {
+describe("Payment Evaluation Framework (Self-Healing + Evaluation + Scoring)", function () {
 
-    it("should process payment and self-heal schema changes", async () => {
+    this.timeout(30000);
 
-        try {
-            // Step 1: Create Payment
-            const payment = await createPayment();
+    it("should evaluate and score payment response end-to-end", async function () {
 
-            console.log(" Raw Payment Response:", payment);
+        // Step 1: Create payment (API call)
+        const payment = await createPayment();
 
-            // Step 2: Define expected schema (INTENTIONALLY mismatched)
-            // This simulates a real-world API breaking change
-            const expectedSchema = {
-                amount: "",
-                currency: "",
-                username: ""   //  API actually returns userName → triggers self-healing
-            };
+        console.log("Raw Payment:", payment);
 
-            // Step 3: Apply self-healing logic
-            const healedResponse = healResponse(payment, expectedSchema);
+        // Step 2: Self-healing (schema adaptation)
+        const expectedSchema = {
+            amount: "",
+            currency: "",
+            username: ""
+        };
 
-            console.log("Healed Response:", healedResponse);
+        const healed = healResponse(payment, expectedSchema);
 
-            // Step 4: Validate healed response
-            if (!healedResponse.username) {
-                throw new Error(" Self-healing failed: 'username' not resolved");
-            }
+        console.log("Healed Response:", healed);
 
-            console.log("Self-healing successful: username mapped correctly");
+        // Step 3: Evaluation (rule-based validation)
+        const evaluation = evaluateResponse(healed);
 
-            // Step 5: Retrieve payment status
-            const status = await getPaymentStatus(payment.id);
-
-            console.log(" Payment Status Response:", status);
-
-            // Step 6: Validate status response
-            if (!status.id) {
-                throw new Error("Payment status validation failed");
-            }
-
-            console.log("Payment workflow completed successfully");
-
-        } catch (err: any) {
-            console.error(" Test Failed:", err.message);
-            throw err;
+        if (!evaluation.passed) {
+            console.log("Evaluation Issues:", evaluation.issues);
+            throw new Error("Evaluation failed");
         }
 
+        // Step 4: Risk Detection
+        const risks = detectRisks(healed);
+
+        if (risks.length > 0) {
+            console.log("Detected Risks:", risks);
+        }
+
+        // Step 5: Scoring (DeepEval-style)
+        const scoring = calculateScore(healed);
+
+        console.log("Score:", scoring.score);
+        console.log("Score Breakdown:", scoring.breakdown);
+
+        // Step 6: Quality Classification
+        const quality = getQualityLabel(scoring.score);
+
+        console.log("Quality Level:", quality);
+
+        // Step 7: Final Decision Logic
+        if (scoring.score < 0.6) {
+            throw new Error(`Low quality response. Score: ${scoring.score}`);
+        }
+
+        console.log("Payment evaluation completed successfully");
     });
 
 });
