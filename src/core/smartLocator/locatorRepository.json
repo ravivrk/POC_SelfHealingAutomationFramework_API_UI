@@ -1,0 +1,9 @@
+
+{
+  "loginButton": {
+    "selectors": [
+      { "using": "css selector", "value": "button[type='submit']" },
+      { "using": "xpath", "value": "//button[text()='Login']" }
+    ]
+  }
+}

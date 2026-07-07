@@ -1,0 +1,21 @@
+{
+  "name": "self-healing-framework",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "mocha -r ts-node/register src/tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.0.0",
+    "selenium-webdriver": "^4.0.0",
+    "winston": "^3.8.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/selenium-webdriver": "^4.35.6",
+    "mocha": "^10.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
+  }
+}
